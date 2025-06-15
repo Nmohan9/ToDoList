@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interactive To-Do List</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta2/css/all.min.css"
+      integrity="sha512-YWzhKL2whUzgiheMoBFwW8CKV4qpHQAEuvilg9FAn5VJUDwKZZxkJNuGM4XkWuk94WCrrwslk8yWNGmY1EduTA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <style>
+      body {
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #f0f8ff;
+        font-family: 'Arial', sans-serif;
+        height: 100vh;
+      }
+
+      .container {
+        text-align: center;
+      }
+
+      h1 {
+        color: #333;
+      }
+
+      .form {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        width: 400px;
+        background-color: #fff;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      .input-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        background-color: #f9f9f9;
+      }
+
+      .input {
+        flex: 1;
+        border: none;
+        padding: 10px;
+        font-size: 16px;
+        outline: none;
+      }
+
+      .add-btn {
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        margin-left: 10px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      .list {
+        padding: 0;
+        margin: 0;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+
+      .list li {
+        list-style-type: none;
+        padding: 15px;
+        font-family: 'Arial', sans-serif;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .list li .task-text {
+        flex: 1;
+      }
+
+      .list li .fa-trash {
+        color: #ff5252;
+        margin-left: 10px;
+        cursor: pointer;
+      }
+
+      .list li .fa-check-square {
+        color: #4caf50;
+        margin-right: 10px;
+        cursor: pointer;
+      }
+
+      .list li.checked .task-text {
+        color: #9e9e9e;
+        text-decoration: line-through;
+      }
+
+      .list li.checked .fa-check-square {
+        color: #9e9e9e;
+      }
+
+      .toast {
+        visibility: hidden;
+        min-width: 250px;
+        margin-left: -125px;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        border-radius: 2px;
+        padding: 16px;
+        position: fixed;
+        z-index: 1;
+        left: 50%;
+        bottom: 30px;
+        font-size: 17px;
+      }
+
+      .toast.show {
+        visibility: visible;
+        animation: fadein 0.5s, fadeout 0.5s 2.5s;
+      }
+
+      @keyframes fadein {
+        from {bottom: 0; opacity: 0;}
+        to {bottom: 30px; opacity: 1;}
+      }
+
+      @keyframes fadeout {
+        from {bottom: 30px; opacity: 1;}
+        to {bottom: 0; opacity: 0;}
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Interactive To-Do List</h1>
+      <form class="form">
+        <div class="input-container">
+          <input
+            type="text"
+            class="input"
+            placeholder="Enter your task"
+            autocomplete="off"
+          />
+          <button type="submit" class="add-btn">Add</button>
+        </div>
+        <ul class="list"></ul>
+      </form>
+    </div>
+    <script>
+      const formEl = document.querySelector(".form");
+      const inputEl = document.querySelector(".input");
+      const ulEl = document.querySelector(".list");
+
+      let list = JSON.parse(localStorage.getItem("list"));
+      if (list) {
+        list.forEach((task) => {
+          toDoList(task);
+        });
+      }
+
+      formEl.addEventListener("submit", (event) => {
+        event.preventDefault();
+        toDoList();
+      });
+
+      function showToast(message) {
+        const toast = document.createElement("div");
+        toast.classList.add("toast");
+        toast.innerText = message;
+        document.body.appendChild(toast);
+        toast.classList.add("show");
+
+        setTimeout(function() {
+          toast.classList.remove("show");
+          setTimeout(function() {
+            document.body.removeChild(toast);
+          }, 500);
+        }, 3000);
+      }
+
+      function toDoList(task) {
+        let newTask = inputEl.value.trim();
+        if (task) {
+          newTask = task.name;
+        }
+
+        if (newTask === "") return;
+
+        const liEl = document.createElement("li");
+        if (task && task.checked) {
+          liEl.classList.add("checked");
+        }
+
+        liEl.innerHTML = `
+          <span class="task-text">${newTask}</span>
+          <div>
+            <i class="fas fa-check-square"></i>
+            <i class="fas fa-trash"></i>
+          </div>
+        `;
+
+        ulEl.appendChild(liEl);
+        inputEl.value = "";
+
+        const checkBtnEl = liEl.querySelector(".fa-check-square");
+        const trashBtnEl = liEl.querySelector(".fa-trash");
+
+        checkBtnEl.addEventListener("click", () => {
+          liEl.classList.toggle("checked");
+          updateLocalStorage();
+        });
+
+        trashBtnEl.addEventListener("click", () => {
+          liEl.remove();
+          updateLocalStorage();
+        });
+
+        updateLocalStorage();
+        showToast("Task added successfully!");
+      }
+
+      function updateLocalStorage() {
+        const liEls = document.querySelectorAll("li");
+        list = [];
+        liEls.forEach((liEl) => {
+          list.push({
+            name: liEl.querySelector(".task-text").innerText,
+            checked: liEl.classList.contains("checked"),
+          });
+        });
+        localStorage.setItem("list", JSON.stringify(list));
+      }
+    </script>
+  </body>
+</html>
